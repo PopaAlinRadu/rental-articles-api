@@ -6,12 +6,12 @@ import ro.nila.ra.model.view.Views;
 public class ApiResponse<T extends Object> {
 
     private Boolean success;
-    private T t;
+    private T data;
     private String resourceLocation;
 
-    public ApiResponse(Boolean success, T t, String resourceLocation) {
+    public ApiResponse(Boolean success, T data, String resourceLocation) {
         this.success = success;
-        this.t = t;
+        this.data = data;
         this.resourceLocation = resourceLocation;
     }
 
@@ -25,12 +25,12 @@ public class ApiResponse<T extends Object> {
     }
 
     @JsonView(Views.WithoutRole.class)
-    public T getObject() {
-        return t;
+    public T getData() {
+        return data;
     }
 
-    public void setObject(T t) {
-        this.t = t;
+    public void setData(T t) {
+        this.data = t;
     }
 
     @JsonView(Views.WithoutRole.class)

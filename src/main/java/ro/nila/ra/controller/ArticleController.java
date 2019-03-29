@@ -91,11 +91,11 @@ public class ArticleController {
      * @return the Article saved and the Account that saved it
      */
     @PostMapping
-    @JsonView(Views.WithAccount.class)
+    @JsonView(Views.WithoutAccount.class)
     public ResponseEntity saveArticle(@Valid @RequestBody Article article){
-
         Long accountId = ((AccountPrincipal)SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getId();
-        Account account = accountService.findById(accountId).get();
+        Account account = new Account();
+        account.setId(accountId);
         article.setAccount(account);
         Article result = articleService.save(article);
         return ResponseEntity
