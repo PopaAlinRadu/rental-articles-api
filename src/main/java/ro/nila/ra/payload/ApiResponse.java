@@ -1,21 +1,21 @@
 package ro.nila.ra.payload;
 
 import com.fasterxml.jackson.annotation.JsonView;
-import ro.nila.ra.model.Account;
+import ro.nila.ra.model.view.Views;
 
-public class ApiResponse {
+public class ApiResponse<T extends Object> {
 
     private Boolean success;
-    private String message;
+    private T t;
     private String resourceLocation;
 
-    public ApiResponse(Boolean success, String message, String resourceLocation) {
+    public ApiResponse(Boolean success, T t, String resourceLocation) {
         this.success = success;
-        this.message = message;
+        this.t = t;
         this.resourceLocation = resourceLocation;
     }
 
-    @JsonView(Account.WithoutPasswordView.class)
+    @JsonView(Views.WithoutRole.class)
     public Boolean getSuccess() {
         return success;
     }
@@ -24,16 +24,16 @@ public class ApiResponse {
         this.success = success;
     }
 
-    @JsonView(Account.WithoutPasswordView.class)
-    public String getMessage() {
-        return message;
+    @JsonView(Views.WithoutRole.class)
+    public T getObject() {
+        return t;
     }
 
-    public void setMessage(String message) {
-        this.message = message;
+    public void setObject(T t) {
+        this.t = t;
     }
 
-    @JsonView(Account.WithoutPasswordView.class)
+    @JsonView(Views.WithoutRole.class)
     public String getResourceLocation() {
         return resourceLocation;
     }
