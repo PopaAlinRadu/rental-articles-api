@@ -1,31 +1,35 @@
 package ro.nila.ra.controller;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonView;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.util.ObjectUtils;
 import org.springframework.web.bind.annotation.*;
+import ro.nila.ra.exceptions.ResourceNotFoundException;
 import ro.nila.ra.model.Account;
 import ro.nila.ra.model.Article;
 import ro.nila.ra.model.view.Views;
 import ro.nila.ra.payload.ApiResponse;
 import ro.nila.ra.security.AccountPrincipal;
-import ro.nila.ra.service.AccountService;
 import ro.nila.ra.service.ArticleService;
 
 import javax.validation.Valid;
+import java.util.List;
 
 @RestController
 @RequestMapping("/articles")
 public class ArticleController {
 
-    private ArticleService articleService;
-    private AccountService accountService;
+    private static final Logger logger = LoggerFactory.getLogger(ArticleController.class);
 
-    public ArticleController(ArticleService articleService,
-                             AccountService accountService) {
+    private ArticleService articleService;
+
+    public ArticleController(ArticleService articleService) {
         this.articleService = articleService;
-        this.accountService = accountService;
     }
 
     /**
@@ -36,8 +40,15 @@ public class ArticleController {
     @GetMapping
     @JsonView(Views.WithAccount.class)
     public ResponseEntity getArticles() {
-        return ResponseEntity.
-                ok(new ApiResponse(true, articleService.findAll(), null));
+        List<Article> articles = articleService.findAll();
+        if (!ObjectUtils.isEmpty(articles)) {
+            return ResponseEntity.
+                    ok(new ApiResponse<>(true, articleService.findAll(), null));
+        } else
+            return new ResponseEntity<>(
+                    new ApiResponse<>
+                            (false, HttpStatus.NOT_FOUND, HttpStatus.NOT_FOUND.getReasonPhrase()),
+                    HttpStatus.NOT_FOUND);
     }
 
     /**
@@ -49,9 +60,19 @@ public class ArticleController {
     @GetMapping("/user/{id}")
     @JsonView(Views.WithoutAccount.class)
     public ResponseEntity getArticlesForUser(@Valid @PathVariable Long id) {
-        return ResponseEntity.
-                ok(new ApiResponse(true, articleService.findArticleForUser(id), null));
+        try {
+            List<Article> articles = articleService.findArticlesForUser(id);
+            return ResponseEntity.
+                    ok(new ApiResponse<>(true, articles, null));
+        } catch (RuntimeException e) {
+            logger.info(e.getMessage());
+            return new ResponseEntity<>(
+                    new ApiResponse<>(false,
+                            new ResourceNotFoundException(e.getMessage()), HttpStatus.BAD_REQUEST.getReasonPhrase()),
+                    HttpStatus.NOT_FOUND);
+        }
     }
+
 
     /**
      * Method that will return an Article based on its ID
@@ -61,14 +82,14 @@ public class ArticleController {
      */
     @GetMapping("/{id}")
     @JsonView(Views.WithAccount.class)
-    public ResponseEntity getArticle(@Valid @PathVariable Long id){
-        if (!articleService.findById(id).isPresent()){
+    public ResponseEntity getArticle(@Valid @PathVariable Long id) {
+        if (!articleService.findById(id).isPresent()) {
             return new ResponseEntity<>(
-                    new ApiResponse(false, HttpStatus.NOT_FOUND.getReasonPhrase(), null),
+                    new ApiResponse<>(false, HttpStatus.NOT_FOUND.getReasonPhrase(), null),
                     HttpStatus.NOT_FOUND);
         }
         return ResponseEntity
-                .ok(new ApiResponse(true, articleService.findById(id), null));
+                .ok(new ApiResponse<>(true, articleService.findById(id), null));
     }
 
     /**
@@ -79,9 +100,18 @@ public class ArticleController {
      */
     @DeleteMapping("/{id}")
     @JsonView(Views.WithoutAccount.class)
-    public ResponseEntity deleteArticle(@Valid @PathVariable Long id){
-        return ResponseEntity.
-                ok(new ApiResponse(true, articleService.deleteById(id), null));
+    public ResponseEntity deleteArticle(@Valid @PathVariable Long id) {
+        try {
+            Article article = articleService.deleteById(id);
+            return ResponseEntity.
+                    ok(new ApiResponse<>(true, article, null));
+        } catch (RuntimeException e) {
+            logger.info(e.getMessage());
+            return new ResponseEntity<>(
+                    new ApiResponse<>(false,
+                            new ResourceNotFoundException(e.getMessage()), HttpStatus.BAD_REQUEST.getReasonPhrase()),
+                    HttpStatus.NOT_FOUND);
+        }
     }
 
     /**
@@ -92,14 +122,14 @@ public class ArticleController {
      */
     @PostMapping
     @JsonView(Views.WithoutAccount.class)
-    public ResponseEntity saveArticle(@Valid @RequestBody Article article){
-        Long accountId = ((AccountPrincipal)SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getId();
+    public ResponseEntity saveArticle(@Valid @RequestBody Article article) {
+        Long accountId = ((AccountPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getId();
         Account account = new Account();
         account.setId(accountId);
         article.setAccount(account);
         Article result = articleService.save(article);
         return ResponseEntity
-                .ok(new ApiResponse(true, result, null));
+                .ok(new ApiResponse<>(true, result, null));
     }
 
 }

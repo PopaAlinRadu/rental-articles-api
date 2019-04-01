@@ -3,7 +3,7 @@ package ro.nila.ra.payload;
 import com.fasterxml.jackson.annotation.JsonView;
 import ro.nila.ra.model.view.Views;
 
-public class ApiResponse<T extends Object> {
+public class ApiResponse<T> {
 
     private Boolean success;
     private T data;
@@ -20,25 +20,14 @@ public class ApiResponse<T extends Object> {
         return success;
     }
 
-    public void setSuccess(Boolean success) {
-        this.success = success;
-    }
-
     @JsonView(Views.WithoutRole.class)
     public T getData() {
         return data;
     }
-
-    public void setData(T t) {
-        this.data = t;
-    }
-
+    
     @JsonView(Views.WithoutRole.class)
     public String getResourceLocation() {
         return resourceLocation;
     }
 
-    public void setResourceLocation(String resourceLocation) {
-        this.resourceLocation = resourceLocation;
-    }
 }
